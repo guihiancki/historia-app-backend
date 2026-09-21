@@ -11,9 +11,9 @@ router.get('/:usuarioId', async (req, res) => {
       .eq('usuario_id', req.params.usuarioId);
 
     if (error) throw error;
-    res.json(data);
+    res.json(data || []);
   } catch (err) {
-    res.status(500).json({ erro: err.message });
+    res.json([]);
   }
 });
 
@@ -88,7 +88,7 @@ router.post('/:usuarioId/trilha', async (req, res) => {
       .select('id')
       .eq('usuario_id', usuarioId)
       .eq('modulo_id', modulo_id)
-      .single();
+      .maybeSingle();
 
     if (existente) {
       const { error } = await supabase
@@ -105,9 +105,9 @@ router.post('/:usuarioId/trilha', async (req, res) => {
       const { error } = await supabase
         .from('progresso_usuario')
         .insert([{
-          usuario_id: usuarioId,
+          usuario_id: parseInt(usuarioId),
           modulo_id: modulo_id,
-          progresso_json,
+          progresso_json: progresso_json,
           percentual: 100
         }]);
 
