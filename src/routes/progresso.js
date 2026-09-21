@@ -6,14 +6,15 @@ const router = express.Router();
 router.get('/:usuarioId', async (req, res) => {
   try {
     const { data, error } = await supabase
-      .from('progresso_usuario')
+      .from('trilhas_progresso')
       .select('*')
-      .eq('usuario_id', req.params.usuarioId);
+      .eq('usuario_id', req.params.usuarioId)
+      .maybeSingle();
 
     if (error) throw error;
-    res.json(data || []);
+    res.json(data || { progresso_json: '{}' });
   } catch (err) {
-    res.json([]);
+    res.json({ progresso_json: '{}' });
   }
 });
 
@@ -30,37 +31,34 @@ router.get('/:usuarioId/resumo', async (req, res) => {
     }
 
     const { data: progresso } = await supabase
-      .from('progresso_usuario')
-      .select('*')
-      .eq('usuario_id', req.params.usuarioId);
+      .from('trilhas_progresso')
+      .select('progresso_json')
+      .eq('usuario_id', req.params.usuarioId)
+      .maybeSingle();
 
     let trilhasIniciadas = 0;
     let trilhasCompletas = 0;
     let totalEtapas = 0;
     let etapasCompletas = 0;
 
-    if (progresso) {
-      for (const p of progresso) {
-        if (p.modulo_id === 99 && p.progresso_json) {
-          try {
-            const todo = JSON.parse(p.progresso_json);
-            const trilhas = Object.keys(todo);
-            trilhasIniciadas = trilhas.length;
-            
-            for (const trilhaId of trilhas) {
-              const etapas = todo[trilhaId];
-              if (etapas && etapas.length > 0) {
-                totalEtapas += etapas.length;
-                const completas = etapas.filter(e => e.completa).length;
-                etapasCompletas += completas;
-                if (completas === etapas.length) {
-                  trilhasCompletas++;
-                }
-              }
+    if (progresso && progresso.progresso_json) {
+      try {
+        const todo = JSON.parse(progresso.progresso_json);
+        const trilhas = Object.keys(todo);
+        trilhasIniciadas = trilhas.length;
+        
+        for (const trilhaId of trilhas) {
+          const etapas = todo[trilhaId];
+          if (etapas && etapas.length > 0) {
+            totalEtapas += etapas.length;
+            const completas = etapas.filter(e => e.completa).length;
+            etapasCompletas += completas;
+            if (completas === etapas.length) {
+              trilhasCompletas++;
             }
-          } catch(e) {}
+          }
         }
-      }
+      } catch(e) {}
     }
 
     res.json({
@@ -80,35 +78,31 @@ router.get('/:usuarioId/resumo', async (req, res) => {
 
 router.post('/:usuarioId/trilha', async (req, res) => {
   try {
-    const { modulo_id, progresso_json } = req.body;
+    const { progresso_json } = req.body;
     const { usuarioId } = req.params;
 
     const { data: existente } = await supabase
-      .from('progresso_usuario')
+      .from('trilhas_progresso')
       .select('id')
       .eq('usuario_id', usuarioId)
-      .eq('modulo_id', modulo_id)
       .maybeSingle();
 
     if (existente) {
       const { error } = await supabase
-        .from('progresso_usuario')
+        .from('trilhas_progresso')
         .update({ 
           progresso_json, 
-          ultima_actividade: new Date().toISOString(),
-          percentual: 100
+          atualizado_em: new Date().toISOString()
         })
         .eq('id', existente.id);
 
       if (error) throw error;
     } else {
       const { error } = await supabase
-        .from('progresso_usuario')
+        .from('trilhas_progresso')
         .insert([{
           usuario_id: parseInt(usuarioId),
-          modulo_id: modulo_id,
-          progresso_json: progresso_json,
-          percentual: 100
+          progresso_json: progresso_json
         }]);
 
       if (error) throw error;
