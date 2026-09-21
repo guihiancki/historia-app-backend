@@ -9,6 +9,7 @@ const perguntasRoutes = require('./routes/perguntas');
 const quizRoutes = require('./routes/quiz');
 const progressoRoutes = require('./routes/progresso');
 const rankingRoutes = require('./routes/ranking');
+const xpRoutes = require('./routes/xp');
 
 const app = express();
 
@@ -30,6 +31,7 @@ app.use('/api/perguntas', perguntasRoutes);
 app.use('/api/quiz', quizRoutes);
 app.use('/api/progresso', progressoRoutes);
 app.use('/api/ranking', rankingRoutes);
+app.use('/api/xp', xpRoutes);
 
 app.get('/', (req, res) => {
   res.json({
