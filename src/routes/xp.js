@@ -3,10 +3,10 @@ const supabase = require('../config/supabase');
 
 const router = express.Router();
 
-router.post('/:usuarioId/xp', async (req, res) => {
+router.post('/:usuarioId', async (req, res) => {
   try {
     const { usuarioId } = req.params;
-    const { xp_ganho } = req.body;
+    const { xp_ganho, trilha_id, etapa_index, etapa_tipo } = req.body;
 
     if (!xp_ganho || xp_ganho <= 0) {
       return res.status(400).json({ erro: 'XP deve ser maior que 0' });
@@ -14,7 +14,7 @@ router.post('/:usuarioId/xp', async (req, res) => {
 
     const { data: usuario, error: userError } = await supabase
       .from('usuarios')
-      .select('xp_total')
+      .select('id, xp_total')
       .eq('id', usuarioId)
       .single();
 
@@ -37,6 +37,7 @@ router.post('/:usuarioId/xp', async (req, res) => {
     if (error) throw error;
 
     res.json({
+      sucesso: true,
       xp_ganho,
       xp_total: novoXp,
       nivel: novoNivel
